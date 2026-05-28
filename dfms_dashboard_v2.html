@@ -285,6 +285,25 @@ tbody td{padding:9px 12px;vertical-align:middle;white-space:nowrap}
 .sub-tab{padding:8px 16px;font-family:var(--font-mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);border:none;background:transparent;cursor:pointer;border-bottom:2px solid transparent;transition:color .15s}
 .sub-tab:hover{color:var(--text2)}
 .sub-tab.active{color:#4589ff;border-bottom-color:#4589ff}
+
+/* SCREEN DESIGN NOTES */
+.screen-notes{background:var(--layer);border:1px solid var(--border);border-left:3px solid #4589ff}
+.screen-notes summary{cursor:pointer;padding:10px 14px;font-family:var(--font-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--text2);list-style:none;display:flex;align-items:center;gap:8px}
+.screen-notes summary::before{content:'▸';font-size:10px}
+.screen-notes[open] summary::before{content:'▾'}
+.screen-notes summary::-webkit-details-marker{display:none}
+.screen-notes[open] summary{color:#4589ff;border-bottom:1px solid var(--border)}
+.notes-body{padding:12px 14px 14px;font-size:11px;line-height:1.55}
+.notes-body dl{display:grid;grid-template-columns:118px 1fr;gap:6px 12px;margin:0 0 8px}
+.notes-body dt{font-family:var(--font-mono);font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--text3)}
+.notes-body dd{margin:0;color:var(--text)}
+.notes-actions{font-family:var(--font-mono);font-size:10px;color:var(--text2);padding-top:6px;border-top:1px solid var(--border-sub)}
+.notes-actions strong{color:var(--text)}
+.page-footer{margin-top:8px;padding:10px 0 0;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:16px;font-family:var(--font-mono);font-size:10px;color:var(--text3)}
+.modal-notes{margin:0 18px 12px;padding:10px 12px;background:rgba(69,137,255,.06);border:1px solid rgba(69,137,255,.25);font-size:10px;color:var(--text2)}
+.modal-notes dt{font-family:var(--font-mono);font-size:9px;text-transform:uppercase;color:var(--text3);margin-top:6px}
+.modal-notes dd{margin:2px 0 0;color:var(--text)}
+
 </style>
 </head>
 <body>
@@ -358,10 +377,28 @@ tbody td{padding:9px 12px;vertical-align:middle;white-space:nowrap}
   <div class="page-hdr">
     <div class="page-title">Mission Control <span>Dashboard</span></div>
     <div class="toolbar">
+      <select class="filter-sel"><option>Status: All</option><option>Available</option><option>In Mission</option></select>
+      <select class="filter-sel"><option>Location: All</option><option>BayWind Farm</option><option>Coastal Ridge</option></select>
+      <select class="filter-sel"><option>Weather: All</option><option>Clear only</option><option>Restricted</option></select>
+      <select class="filter-sel"><option>Battery: All</option><option>&gt; 70%</option><option>&gt; 50%</option></select>
       <div class="date-range-input">📅 5/10/2025 – 5/17/2025</div>
       <button class="toolbar-btn primary" onclick="showNotif('info','Recommendation: DR-01 — BayWind Farm — 92% battery, optimal range')">★ Recommend Drone</button>
     </div>
   </div>
+
+  <details class="screen-notes">
+    <summary>Design notes — US-01 Mission Control Dashboard</summary>
+    <div class="notes-body">
+      <dl>
+        <dt>Role</dt><dd>Ops Manager</dd>
+        <dt>Task</dt><dd>Monitor fleet health, faults, missions, and alerts; decide whether to recommend or dispatch a drone.</dd>
+        <dt>User story</dt><dd><strong>US-01</strong> — Single mission-control view for status and prioritized action.</dd>
+        <dt>Data shown</dt><dd>KPIs, system alerts, live map, recent missions.</dd>
+        <dt>Data updated</dt><dd>Date range and filter selections (session); drill-through navigation only.</dd>
+      </dl>
+      <div class="notes-actions"><strong>Primary:</strong> Recommend Drone · <strong>Secondary:</strong> filters, View all · <strong>Errors:</strong> severity colors, SLA highlights, weather blocks unsafe dispatch downstream.</div>
+    </div>
+  </details>
 
   <!-- KPIs -->
   <div class="kpi-grid">
@@ -478,10 +515,28 @@ tbody td{padding:9px 12px;vertical-align:middle;white-space:nowrap}
       </div>
     </div>
   </div>
+  <div class="page-footer">
+    <span>⟳ Data sync: every 5 min</span>
+    <span>⚡ Auto handoff: Faults → Maintenance</span>
+    <span>🔒 Role: Ops Manager</span>
+  </div>
 </div>
 
 <!-- ═══════════════ DRONES VIEW ═══════════════ -->
 <div class="view" id="view-drones">
+  <details class="screen-notes">
+    <summary>Design notes — US-02 Drone Fleet</summary>
+    <div class="notes-body">
+      <dl>
+        <dt>Role</dt><dd>Ops Manager</dd>
+        <dt>Task</dt><dd>Review fleet readiness; select a drone for dispatch or detail review.</dd>
+        <dt>User story</dt><dd><strong>US-02</strong> — See all drones and readiness to assign the right asset.</dd>
+        <dt>Data shown</dt><dd>Drone ID, status, battery %, location, last sync; side panel overview and weather.</dd>
+        <dt>Data updated</dt><dd>Search and filters; row selection updates panel.</dd>
+      </dl>
+      <div class="notes-actions"><strong>Primary:</strong> Dispatch (Available only) · <strong>Secondary:</strong> Recommend, View · <strong>Errors:</strong> dispatch hidden unless Available; battery color thresholds.</div>
+    </div>
+  </details>
   <div class="page-hdr">
     <div class="page-title">Drone <span>Fleet</span></div>
     <div class="toolbar">
@@ -573,6 +628,19 @@ tbody td{padding:9px 12px;vertical-align:middle;white-space:nowrap}
 
 <!-- ═══════════════ TURBINES VIEW ═══════════════ -->
 <div class="view" id="view-turbines">
+  <details class="screen-notes">
+    <summary>Design notes — US-05 / US-06 Turbines & Faults</summary>
+    <div class="notes-body">
+      <dl>
+        <dt>Role</dt><dd>Ops Manager</dd>
+        <dt>Task</dt><dd>Assess turbine health; triage faults; dispatch inspection or route to maintenance.</dd>
+        <dt>User story</dt><dd><strong>US-05</strong> turbine health · <strong>US-06</strong> open fault triage and handoff.</dd>
+        <dt>Data shown</dt><dd>Turbine health table; fault severity, type, detected time, assignee.</dd>
+        <dt>Data updated</dt><dd>Filters; Create Fault Report → maintenance queue (simulated).</dd>
+      </dl>
+      <div class="notes-actions"><strong>Primary:</strong> Dispatch · <strong>Secondary:</strong> Review, Create Fault Report · <strong>Errors:</strong> severity badges and site filters reduce mis-dispatch.</div>
+    </div>
+  </details>
   <div class="page-hdr">
     <div class="page-title">Turbines &amp; <span>Faults</span></div>
     <div class="toolbar">
@@ -643,6 +711,19 @@ tbody td{padding:9px 12px;vertical-align:middle;white-space:nowrap}
 
 <!-- ═══════════════ MISSIONS VIEW ═══════════════ -->
 <div class="view" id="view-missions">
+  <details class="screen-notes">
+    <summary>Design notes — US-07 Mission Control</summary>
+    <div class="notes-body">
+      <dl>
+        <dt>Role</dt><dd>Ops Manager</dd>
+        <dt>Task</dt><dd>Track missions and SLA; dispatch pending work or abort active flights.</dd>
+        <dt>User story</dt><dd><strong>US-07</strong> — Full mission visibility to meet SLAs.</dd>
+        <dt>Data shown</dt><dd>Mission table; panel overview; hourly weather forecast.</dd>
+        <dt>Data updated</dt><dd>Search and filters; dispatch → In Progress; abort → Aborted with audit fields.</dd>
+      </dl>
+      <div class="notes-actions"><strong>Primary:</strong> Dispatch · <strong>Destructive:</strong> Abort (requires modal) · <strong>Errors:</strong> status-gated action buttons.</div>
+    </div>
+  </details>
   <div class="page-hdr">
     <div class="page-title">Mission <span>Control</span></div>
     <div class="toolbar">
@@ -685,14 +766,7 @@ tbody td{padding:9px 12px;vertical-align:middle;white-space:nowrap}
       <div class="panel-body" id="panel-m-detail" style="display:none"><div class="empty-state">Select a mission</div></div>
       <div class="panel-body" id="panel-m-weather" style="display:none">
         <div class="panel-section">Weather Forecast</div>
-        <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-top:8px">
-          ${['09:00','10:00','11:00','12:00','13:00','14:00'].map((t,i)=>{
-            const winds=['8kt','10kt','31kt','28kt','18kt','12kt'];
-            const cls=['ok','ok','bad','bad','warn','ok'];
-            const ic=['🌤','🌤','⛈','⛈','🌬','🌤'];
-            return `<div style="flex-shrink:0;background:var(--layer2);border:1px solid var(--border);padding:7px 9px;text-align:center;min-width:52px"><div style="font-family:var(--font-mono);font-size:9px;color:var(--text3)">${t}</div><div style="font-size:14px;margin:3px 0">${ic[i]}</div><div style="font-family:var(--font-mono);font-size:10px;font-weight:600;color:${cls[i]==='ok'?'#42be65':cls[i]==='warn'?'#f1c21b':'#fa4d56'}">${winds[i]}</div></div>`;
-          }).join('')}
-        </div>
+        <div id="missionWeatherStrip" style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-top:8px"></div>
       </div>
     </div>
   </div>
@@ -700,6 +774,19 @@ tbody td{padding:9px 12px;vertical-align:middle;white-space:nowrap}
 
 <!-- ═══════════════ SETTINGS VIEW ═══════════════ -->
 <div class="view" id="view-settings">
+  <details class="screen-notes">
+    <summary>Design notes — US-09 System Settings</summary>
+    <div class="notes-body">
+      <dl>
+        <dt>Role</dt><dd>Ops Manager</dd>
+        <dt>Task</dt><dd>Configure sync, alerts, dispatch rules, and display preferences.</dd>
+        <dt>User story</dt><dd><strong>US-09</strong> — Tune alerts and dispatch thresholds without developer support.</dd>
+        <dt>Data shown</dt><dd>Sync interval, alert toggles, battery thresholds, role badge.</dd>
+        <dt>Data updated</dt><dd>Save applies sync, alerts, dispatch rules, theme, map default.</dd>
+      </dl>
+      <div class="notes-actions"><strong>Primary:</strong> Save Changes · <strong>Errors:</strong> numeric fields bounded 0–100; grouped field cards.</div>
+    </div>
+  </details>
   <div class="page-hdr">
     <div class="page-title">System <span>Settings</span></div>
     <button class="toolbar-btn primary" onclick="showNotif('success','Settings saved successfully')">Save Changes</button>
@@ -790,6 +877,11 @@ tbody td{padding:9px 12px;vertical-align:middle;white-space:nowrap}
       <div><div class="modal-title">Dispatch Mission</div><div class="modal-sub" id="dModalSub"></div></div>
       <button class="modal-close" onclick="closeModal('dispatchModal')">✕</button>
     </div>
+    <dl class="modal-notes">
+      <dt>US-04 · Ops Manager</dt><dd>Confirm dispatch after safety interlocks.</dd>
+      <dt>Data updated</dt><dd>Mission status → In Progress on confirm.</dd>
+      <dt>Errors</dt><dd>Warning banner + dimmed confirm when weather is bad; checklist must pass.</dd>
+    </dl>
     <div class="modal-body" id="dModalBody"></div>
     <div class="modal-footer">
       <button class="btn-secondary" onclick="closeModal('dispatchModal')">Cancel</button>
@@ -805,6 +897,11 @@ tbody td{padding:9px 12px;vertical-align:middle;white-space:nowrap}
       <div><div class="modal-title">Abort Mission</div><div class="modal-sub" id="aModalSub"></div></div>
       <button class="modal-close" onclick="closeModal('abortModal')">✕</button>
     </div>
+    <dl class="modal-notes">
+      <dt>US-08 · Ops Manager</dt><dd>Abort active mission with required audit trail.</dd>
+      <dt>Data collected</dt><dd>Abort reason (required select); manager comment (required).</dd>
+      <dt>Errors</dt><dd>Submit blocked until both fields filled; Cancel leaves state unchanged.</dd>
+    </dl>
     <div class="modal-body">
       <div class="form-group"><label>Abort Reason *</label><select class="form-sel" id="abortReason"><option value="">— Select reason —</option><option>Weather conditions</option><option>Equipment failure</option><option>Safety concern</option><option>Operator request</option><option>Site access issue</option></select></div>
       <div class="form-group"><label>Manager Comment *</label><textarea class="form-ta" id="abortComment" placeholder="Provide details for the abort log…"></textarea></div>
@@ -1255,8 +1352,24 @@ document.querySelectorAll('.modal-overlay').forEach(o=>{
   o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');});
 });
 
+
+function renderMissionWeather(){
+  const el=document.getElementById('missionWeatherStrip');
+  if(!el) return;
+  const slots=[
+    {t:'09:00',w:'8kt',c:'#42be65',ic:'🌤'},
+    {t:'10:00',w:'10kt',c:'#42be65',ic:'🌤'},
+    {t:'11:00',w:'31kt',c:'#fa4d56',ic:'⛈'},
+    {t:'12:00',w:'28kt',c:'#fa4d56',ic:'⛈'},
+    {t:'13:00',w:'18kt',c:'#f1c21b',ic:'🌬'},
+    {t:'14:00',w:'12kt',c:'#42be65',ic:'🌤'},
+  ];
+  el.innerHTML=slots.map(s=>`<div style="flex-shrink:0;background:var(--layer2);border:1px solid var(--border);padding:7px 9px;text-align:center;min-width:52px"><div style="font-family:var(--font-mono);font-size:9px;color:var(--text3)">${s.t}</div><div style="font-size:14px;margin:3px 0">${s.ic}</div><div style="font-family:var(--font-mono);font-size:10px;font-weight:600;color:${s.c}">${s.w}</div></div>`).join('');
+}
+
 /* ─── INIT ────────────────────────────────────────────────────────── */
 renderDrones();
+renderMissionWeather();
 </script>
 </body>
 </html>
