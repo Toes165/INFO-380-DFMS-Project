@@ -1,0 +1,1262 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>DFMS — Mission Control</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root { --font-sans:'IBM Plex Sans',sans-serif; --font-mono:'IBM Plex Mono',monospace; }
+[data-theme="dark"] {
+  --bg:#161616; --layer:#262626; --layer2:#393939; --hover:#2c2c2c;
+  --border:#393939; --border-sub:#2c2c2c; --text:#f4f4f4; --text2:#a8a8a8; --text3:#6f6f6f;
+  --shell:#0f0f0f; --input-bg:#262626; --input-border:#525252; --modal-bg:#1c1c1c; --scroll:#525252;
+}
+[data-theme="light"] {
+  --bg:#f4f4f4; --layer:#ffffff; --layer2:#e8e8e8; --hover:#e8e8e8;
+  --border:#e0e0e0; --border-sub:#f0f0f0; --text:#161616; --text2:#525252; --text3:#a8a8a8;
+  --shell:#161616; --input-bg:#f4f4f4; --input-border:#8d8d8d; --modal-bg:#ffffff; --scroll:#c6c6c6;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans);background:var(--bg);color:var(--text);font-size:13px;line-height:1.5;height:100vh;display:flex;flex-direction:column;overflow:hidden;transition:background .2s,color .2s}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--scroll);border-radius:3px}
+
+/* SHELL */
+.shell{background:var(--shell);height:48px;display:flex;align-items:center;padding:0 16px;gap:0;flex-shrink:0;border-bottom:1px solid #333;z-index:100}
+.shell-logo{display:flex;align-items:center;gap:8px;font-family:var(--font-mono);font-weight:600;font-size:13px;letter-spacing:.08em;color:#fff;padding-right:24px;border-right:1px solid #333;margin-right:16px}
+.shell-logo svg{color:#4589ff}
+.shell-spacer{flex:1}
+.shell-actions{display:flex;align-items:center;gap:4px}
+.shell-btn{background:transparent;border:none;color:#a8a8a8;cursor:pointer;width:40px;height:40px;display:flex;align-items:center;justify-content:center;transition:background .15s,color .15s;font-size:14px;position:relative}
+.shell-btn:hover{background:#353535;color:#fff}
+.shell-notif-badge{position:absolute;top:8px;right:8px;width:14px;height:14px;border-radius:50%;background:#fa4d56;color:#fff;font-size:9px;font-weight:600;display:flex;align-items:center;justify-content:center;border:1.5px solid var(--shell)}
+.shell-status{display:flex;align-items:center;gap:8px;padding:0 16px;border-right:1px solid #333;margin-right:4px}
+.pulse-dot{width:8px;height:8px;border-radius:50%;background:#42be65;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.shell-status-text{font-family:var(--font-mono);font-size:11px;color:#42be65;letter-spacing:.06em}
+.shell-time{font-family:var(--font-mono);font-size:11px;color:#6f6f6f;padding:0 12px;border-right:1px solid #333;margin-right:4px}
+.user-pill{display:flex;align-items:center;gap:8px;padding:4px 12px 4px 4px;border:1px solid #333;cursor:pointer;font-size:12px;font-weight:500;color:#a8a8a8}
+.user-pill:hover{color:#fff;border-color:#555}
+.avatar{width:28px;height:28px;border-radius:50%;background:rgba(69,137,255,.2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#4589ff}
+
+/* LAYOUT */
+.app-body{display:flex;flex:1;overflow:hidden}
+
+/* SIDEBAR */
+.sidebar{width:192px;flex-shrink:0;background:var(--layer);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto}
+.nav-section{padding:12px 0 4px;border-bottom:1px solid var(--border-sub)}
+.nav-label{font-family:var(--font-mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);padding:0 16px 6px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 16px;font-size:13px;color:var(--text2);cursor:pointer;border-left:2px solid transparent;transition:background .1s,color .1s;user-select:none}
+.nav-item:hover{background:var(--hover);color:var(--text)}
+.nav-item.active{background:rgba(69,137,255,.08);color:#4589ff;border-left-color:#4589ff}
+.nav-item svg{flex-shrink:0;opacity:.7}
+.nav-item.active svg{opacity:1}
+.nav-badge{margin-left:auto;font-family:var(--font-mono);font-size:10px;font-weight:600;padding:1px 6px;border-radius:20px;min-width:18px;text-align:center}
+.nav-badge.red{background:rgba(250,77,86,.2);color:#fa4d56;border:1px solid rgba(250,77,86,.3)}
+.nav-badge.amber{background:rgba(255,131,43,.2);color:#ff832b;border:1px solid rgba(255,131,43,.3)}
+.nav-badge.blue{background:rgba(69,137,255,.2);color:#4589ff;border:1px solid rgba(69,137,255,.3)}
+.sidebar-bottom{margin-top:auto;padding:12px 16px;border-top:1px solid var(--border)}
+.sys-ok{display:flex;align-items:center;gap:8px;font-family:var(--font-mono);font-size:11px;color:#42be65}
+
+/* MAIN */
+.main{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:16px;min-width:0}
+
+/* PAGE TABS */
+.view{display:none;flex-direction:column;gap:16px}
+.view.active{display:flex}
+
+/* PAGE HEADER */
+.page-hdr{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.page-title{font-family:var(--font-mono);font-size:16px;font-weight:600;letter-spacing:.04em;color:var(--text)}
+.page-title span{color:#4589ff}
+
+/* TOOLBAR */
+.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.search-wrap{position:relative;flex:1;max-width:280px}
+.search-wrap svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text3);pointer-events:none}
+.search-input{width:100%;background:var(--input-bg);border:1px solid var(--input-border);color:var(--text);font-family:var(--font-sans);font-size:12px;padding:7px 12px 7px 32px;outline:none;transition:border-color .15s}
+.search-input:focus{border-color:#4589ff}
+.search-input::placeholder{color:var(--text3)}
+.filter-sel{background:var(--input-bg);border:1px solid var(--input-border);color:var(--text);font-family:var(--font-mono);font-size:11px;padding:7px 10px;outline:none;cursor:pointer;transition:border-color .15s}
+.filter-sel:focus{border-color:#4589ff}
+.filter-sel option{background:var(--layer2)}
+.toolbar-btn{background:var(--input-bg);border:1px solid var(--input-border);color:var(--text2);font-family:var(--font-mono);font-size:11px;padding:7px 12px;cursor:pointer;letter-spacing:.04em;transition:background .15s,border-color .15s,color .15s;display:flex;align-items:center;gap:6px}
+.toolbar-btn:hover{border-color:#4589ff;color:var(--text)}
+.toolbar-btn.primary{background:#4589ff;border-color:#4589ff;color:#fff}
+.toolbar-btn.primary:hover{background:#2f6ef7}
+.toolbar-btn.danger{border-color:rgba(250,77,86,.4);color:#fa4d56}
+.toolbar-btn.danger:hover{background:rgba(250,77,86,.1)}
+
+/* KPI GRID */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
+.kpi{background:var(--layer);border:1px solid var(--border);padding:14px 16px;cursor:pointer;transition:border-color .15s,background .15s;position:relative;overflow:hidden}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.kpi.blue::before{background:#4589ff}
+.kpi.cyan::before{background:#33b1ff}
+.kpi.red::before{background:#fa4d56}
+.kpi.green::before{background:#42be65}
+.kpi.amber::before{background:#ff832b}
+.kpi.yellow::before{background:#f1c21b}
+.kpi:hover,.kpi.active{border-color:#4589ff;background:var(--hover)}
+.kpi.active{background:rgba(69,137,255,.08)}
+.kpi-label{font-size:10px;font-family:var(--font-mono);letter-spacing:.06em;color:var(--text2);text-transform:uppercase;margin-bottom:6px}
+.kpi-val{font-size:28px;font-weight:300;line-height:1;font-family:var(--font-mono)}
+.kpi.blue .kpi-val{color:#4589ff}
+.kpi.cyan .kpi-val{color:#33b1ff}
+.kpi.red .kpi-val{color:#fa4d56}
+.kpi.green .kpi-val{color:#42be65}
+.kpi.amber .kpi-val{color:#ff832b}
+.kpi.yellow .kpi-val{color:#f1c21b}
+.kpi-sub{font-size:10px;color:var(--text3);margin-top:3px;font-family:var(--font-mono)}
+
+/* SECTION */
+.section-hdr{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+.section-title{font-family:var(--font-mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--text2)}
+.section-line{flex:1;height:1px;background:var(--border)}
+.section-count{font-family:var(--font-mono);font-size:10px;color:var(--text3)}
+
+/* TABLE */
+.table-wrap{background:var(--layer);border:1px solid var(--border);overflow:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead th{background:var(--layer2);padding:8px 12px;text-align:left;font-family:var(--font-mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--text2);border-bottom:1px solid var(--border);white-space:nowrap;cursor:pointer;user-select:none}
+thead th:hover{color:var(--text)}
+tbody tr{border-bottom:1px solid var(--border-sub);cursor:pointer;transition:background .1s}
+tbody tr:hover{background:var(--hover)}
+tbody tr.selected{background:rgba(69,137,255,.1)}
+tbody td{padding:9px 12px;vertical-align:middle;white-space:nowrap}
+.td-mono{font-family:var(--font-mono);font-size:11px}
+.td-muted{color:var(--text2)}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;gap:4px;font-family:var(--font-mono);font-size:9px;letter-spacing:.04em;padding:2px 7px;font-weight:500}
+.bdot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.b-green{background:rgba(66,190,101,.15);color:#42be65;border:1px solid rgba(66,190,101,.3)}
+.b-blue{background:rgba(69,137,255,.15);color:#4589ff;border:1px solid rgba(69,137,255,.3)}
+.b-cyan{background:rgba(51,177,255,.15);color:#33b1ff;border:1px solid rgba(51,177,255,.3)}
+.b-red{background:rgba(250,77,86,.15);color:#fa4d56;border:1px solid rgba(250,77,86,.3)}
+.b-amber{background:rgba(255,131,43,.15);color:#ff832b;border:1px solid rgba(255,131,43,.3)}
+.b-yellow{background:rgba(241,194,27,.15);color:#f1c21b;border:1px solid rgba(241,194,27,.3)}
+.b-gray{background:rgba(111,111,111,.15);color:#a8a8a8;border:1px solid rgba(111,111,111,.3)}
+.b-purple{background:rgba(165,110,255,.15);color:#a56eff;border:1px solid rgba(165,110,255,.3)}
+
+/* BATTERY */
+.batt{display:flex;align-items:center;gap:6px}
+.batt-bar{width:44px;height:5px;background:var(--layer2);overflow:hidden}
+.batt-fill{height:100%;transition:width .3s}
+.batt-val{font-family:var(--font-mono);font-size:10px}
+
+/* ACT BUTTONS */
+.act-cell{display:flex;gap:4px}
+.act-btn{font-family:var(--font-mono);font-size:9px;letter-spacing:.04em;padding:3px 8px;border:1px solid;cursor:pointer;transition:background .15s;background:transparent;text-transform:uppercase}
+.act-btn.dispatch{border-color:#4589ff;color:#4589ff}
+.act-btn.dispatch:hover{background:rgba(69,137,255,.2)}
+.act-btn.review{border-color:var(--input-border);color:var(--text2)}
+.act-btn.review:hover{border-color:#33b1ff;color:#33b1ff}
+.act-btn.abort{border-color:rgba(250,77,86,.4);color:#fa4d56}
+.act-btn.abort:hover{background:rgba(250,77,86,.15)}
+
+/* SPLIT LAYOUT for drone/turbine views */
+.split{display:grid;grid-template-columns:1fr 340px;gap:16px;min-height:0}
+.split-main{display:flex;flex-direction:column;gap:12px;min-width:0}
+.split-panel{background:var(--layer);border:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;max-height:calc(100vh - 160px)}
+
+/* PANEL TABS */
+.panel-tabs{display:flex;border-bottom:1px solid var(--border)}
+.ptab{flex:1;padding:10px 8px;font-family:var(--font-mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);border:none;background:transparent;cursor:pointer;transition:color .15s,background .15s;border-bottom:2px solid transparent}
+.ptab:hover{color:var(--text2);background:var(--hover)}
+.ptab.active{color:#4589ff;border-bottom-color:#4589ff;background:rgba(69,137,255,.05)}
+.panel-body{flex:1;overflow-y:auto;padding:12px}
+.panel-section{font-family:var(--font-mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid var(--border-sub)}
+.detail-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border-sub);font-size:11px}
+.detail-row:last-child{border-bottom:none}
+.dr-label{color:var(--text2);font-family:var(--font-mono)}
+.dr-val{font-family:var(--font-mono);font-weight:500}
+.dr-val.ok{color:#42be65}
+.dr-val.warn{color:#f1c21b}
+.dr-val.danger{color:#fa4d56}
+.dr-val.info{color:#4589ff}
+.empty-state{padding:32px 16px;text-align:center;color:var(--text3);font-family:var(--font-mono);font-size:11px}
+
+/* ALERTS PANEL */
+.alert-item{background:var(--layer);border:1px solid var(--border);padding:12px 14px;margin-bottom:8px;display:flex;gap:10px;align-items:flex-start}
+.alert-item.red{border-left:3px solid #fa4d56}
+.alert-item.amber{border-left:3px solid #ff832b}
+.alert-item.yellow{border-left:3px solid #f1c21b}
+.alert-item.green{border-left:3px solid #42be65}
+.alert-icon{flex-shrink:0;margin-top:1px}
+.alert-title{font-size:12px;font-weight:500;margin-bottom:3px}
+.alert-desc{font-size:11px;color:var(--text2);font-family:var(--font-mono);line-height:1.5}
+.alert-time{font-size:10px;color:var(--text3);font-family:var(--font-mono);margin-top:4px}
+
+/* MAP */
+.map-wrap{background:var(--layer);border:1px solid var(--border);padding:0;overflow:hidden;border-radius:0}
+.map-hdr{padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.map-title{font-family:var(--font-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--text2)}
+.map-inner{position:relative;background:#1a2a1a;overflow:hidden}
+.map-svg{width:100%;height:260px;display:block}
+.map-ctrls{position:absolute;right:10px;bottom:10px;display:flex;flex-direction:column;gap:2px}
+.map-btn{width:26px;height:26px;background:var(--layer2);border:1px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--text2);font-weight:500;transition:background .15s}
+.map-btn:hover{background:var(--hover);color:var(--text)}
+
+/* DASHBOARD HOME GRID */
+.home-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.home-grid .span2{grid-column:1/-1}
+.card{background:var(--layer);border:1px solid var(--border)}
+.card-hdr{padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.card-title{font-family:var(--font-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--text2)}
+.card-link{font-family:var(--font-mono);font-size:10px;color:#4589ff;text-decoration:none;cursor:pointer}
+.card-link:hover{text-decoration:underline}
+.card-body{padding:12px 14px}
+
+/* SETTINGS */
+.settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.settings-card{background:var(--layer);border:1px solid var(--border)}
+.settings-card-hdr{padding:12px 16px;border-bottom:1px solid var(--border)}
+.settings-card-title{font-family:var(--font-mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--text2)}
+.settings-card-body{padding:16px}
+.setting-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border-sub)}
+.setting-row:last-child{border-bottom:none}
+.setting-label{font-size:12px;color:var(--text)}
+.setting-sub{font-size:10px;color:var(--text3);font-family:var(--font-mono);margin-top:2px}
+.toggle{width:36px;height:20px;background:var(--layer2);border:1px solid var(--input-border);border-radius:10px;cursor:pointer;position:relative;transition:background .2s;flex-shrink:0}
+.toggle.on{background:#4589ff;border-color:#4589ff}
+.toggle::after{content:'';position:absolute;width:14px;height:14px;border-radius:50%;background:#fff;top:2px;left:2px;transition:left .2s}
+.toggle.on::after{left:18px}
+.setting-input{background:var(--input-bg);border:1px solid var(--input-border);color:var(--text);font-family:var(--font-mono);font-size:12px;padding:5px 8px;width:120px;outline:none}
+.setting-input:focus{border-color:#4589ff}
+.setting-select{background:var(--input-bg);border:1px solid var(--input-border);color:var(--text);font-family:var(--font-mono);font-size:11px;padding:5px 8px;outline:none;cursor:pointer}
+.save-btn{background:#4589ff;border:1px solid #4589ff;color:#fff;font-family:var(--font-mono);font-size:11px;padding:8px 16px;cursor:pointer;letter-spacing:.04em;text-transform:uppercase;transition:background .15s;margin-top:12px}
+.save-btn:hover{background:#2f6ef7}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;display:flex;align-items:center;justify-content:center;padding:24px;opacity:0;pointer-events:none;transition:opacity .2s}
+.modal-overlay.open{opacity:1;pointer-events:all}
+.modal{background:var(--modal-bg);border:1px solid var(--border);width:100%;max-width:640px;max-height:90vh;overflow-y:auto;transform:translateY(12px);transition:transform .2s;box-shadow:0 24px 64px rgba(0,0,0,.5)}
+.modal-overlay.open .modal{transform:translateY(0)}
+.modal-hdr{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--modal-bg);z-index:1}
+.modal-title{font-family:var(--font-mono);font-size:12px;font-weight:600;letter-spacing:.04em}
+.modal-sub{font-size:11px;color:var(--text2);margin-top:2px;font-family:var(--font-mono)}
+.modal-close{background:none;border:none;color:var(--text2);cursor:pointer;font-size:18px;width:28px;height:28px;display:flex;align-items:center;justify-content:center}
+.modal-close:hover{color:var(--text)}
+.modal-body{padding:18px}
+.modal-sec-title{font-family:var(--font-mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:10px;padding-bottom:5px;border-bottom:1px solid var(--border-sub)}
+.modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.modal-field label{font-size:10px;color:var(--text3);font-family:var(--font-mono);display:block;margin-bottom:2px;letter-spacing:.04em}
+.modal-field value{font-size:12px;color:var(--text);font-family:var(--font-mono);font-weight:500;display:block}
+.modal-footer{padding:12px 18px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;position:sticky;bottom:0;background:var(--modal-bg)}
+.btn-primary{background:#4589ff;border:1px solid #4589ff;color:#fff;font-family:var(--font-mono);font-size:11px;letter-spacing:.04em;padding:9px 18px;cursor:pointer;text-transform:uppercase;transition:background .15s}
+.btn-primary:hover{background:#2f6ef7}
+.btn-primary.danger{background:#da1e28;border-color:#da1e28}
+.btn-primary.danger:hover{background:#ba1b23}
+.btn-secondary{background:transparent;border:1px solid var(--input-border);color:var(--text2);font-family:var(--font-mono);font-size:11px;letter-spacing:.04em;padding:9px 18px;cursor:pointer;text-transform:uppercase;transition:border-color .15s,color .15s}
+.btn-secondary:hover{border-color:var(--text);color:var(--text)}
+.warn-box{background:rgba(255,131,43,.1);border:1px solid rgba(255,131,43,.4);padding:10px 12px;display:flex;gap:8px;margin-bottom:14px}
+.warn-box svg{flex-shrink:0;color:#ff832b;margin-top:1px}
+.warn-box p{font-size:11px;color:#ff832b;font-family:var(--font-mono);line-height:1.6}
+.checklist{display:flex;flex-direction:column;gap:5px;margin-bottom:14px}
+.check-item{display:flex;align-items:center;gap:6px;font-size:11px;font-family:var(--font-mono)}
+.chk{width:15px;height:15px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:8px}
+.chk.pass{background:rgba(66,190,101,.2);color:#42be65}
+.chk.fail{background:rgba(250,77,86,.2);color:#fa4d56}
+.chk.warn{background:rgba(255,131,43,.2);color:#ff832b}
+.form-group{margin-bottom:12px}
+.form-group label{display:block;font-size:10px;color:var(--text2);font-family:var(--font-mono);margin-bottom:4px;letter-spacing:.04em}
+.form-sel{width:100%;background:var(--input-bg);border:1px solid var(--input-border);color:var(--text);font-family:var(--font-mono);font-size:12px;padding:7px 9px;outline:none;transition:border-color .15s}
+.form-sel:focus{border-color:#4589ff}
+.form-ta{width:100%;background:var(--input-bg);border:1px solid var(--input-border);color:var(--text);font-family:var(--font-mono);font-size:12px;padding:7px 9px;outline:none;resize:vertical;min-height:70px;transition:border-color .15s}
+.form-ta:focus{border-color:#4589ff}
+.form-ta::placeholder{color:var(--text3)}
+
+/* NOTIFICATION */
+.notif{position:fixed;top:56px;right:16px;z-index:300;background:var(--layer);border:1px solid;padding:10px 14px;font-family:var(--font-mono);font-size:11px;min-width:260px;display:flex;align-items:center;gap:8px;transform:translateX(120%);transition:transform .3s ease;box-shadow:0 8px 24px rgba(0,0,0,.3)}
+.notif.show{transform:translateX(0)}
+.notif.success{border-color:#42be65;color:#42be65}
+.notif.warning{border-color:#ff832b;color:#ff832b}
+.notif.error{border-color:#fa4d56;color:#fa4d56}
+.notif.info{border-color:#4589ff;color:#4589ff}
+
+/* DATE FILTER */
+.date-range-input{background:var(--input-bg);border:1px solid var(--input-border);color:var(--text);font-family:var(--font-mono);font-size:11px;padding:6px 10px;outline:none;display:flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap}
+
+/* sub-tabs within a view */
+.sub-tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:0}
+.sub-tab{padding:8px 16px;font-family:var(--font-mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);border:none;background:transparent;cursor:pointer;border-bottom:2px solid transparent;transition:color .15s}
+.sub-tab:hover{color:var(--text2)}
+.sub-tab.active{color:#4589ff;border-bottom-color:#4589ff}
+</style>
+</head>
+<body>
+
+<!-- SHELL -->
+<header class="shell">
+  <div class="shell-logo">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+    DFMS
+  </div>
+  <div class="shell-status"><div class="pulse-dot"></div><span class="shell-status-text">ALL SYSTEMS OK</span></div>
+  <span class="shell-time" id="shellTime">--:-- UTC</span>
+  <div class="shell-spacer"></div>
+  <div class="shell-actions">
+    <button class="shell-btn" onclick="toggleTheme()" title="Toggle theme">
+      <svg id="themeIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+    </button>
+    <button class="shell-btn" id="notifBtn" onclick="toggleNotifPanel()" title="Alerts">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      <span class="shell-notif-badge" id="notifCount">3</span>
+    </button>
+    <div class="user-pill">
+      <div class="avatar">OM</div>
+      Ops Manager ▾
+    </div>
+  </div>
+</header>
+
+<div class="app-body">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="nav-section">
+    <div class="nav-item active" onclick="showView('home',this)" data-view="home">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      Dashboard
+    </div>
+    <div class="nav-item" onclick="showView('drones',this)" data-view="drones">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93A10 10 0 0 0 4.93 19.07M4.93 4.93a10 10 0 0 0 14.14 14.14"/></svg>
+      Drones
+      <span class="nav-badge blue" id="droneCount">6</span>
+    </div>
+    <div class="nav-item" onclick="showView('turbines',this)" data-view="turbines">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="2" x2="12" y2="22"/><path d="M12 2 L8 9 L12 8 L16 9 Z"/><line x1="6" y1="22" x2="18" y2="22"/></svg>
+      Turbines
+      <span class="nav-badge amber" id="turbineFaultCount">7</span>
+    </div>
+    <div class="nav-item" onclick="showView('missions',this)" data-view="missions">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      Missions
+    </div>
+    <div class="nav-item" onclick="showView('settings',this)" data-view="settings">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      Settings
+    </div>
+  </div>
+  <div class="sidebar-bottom">
+    <div class="sys-ok">
+      <div class="pulse-dot"></div>
+      All Systems OK
+    </div>
+    <div style="font-family:var(--font-mono);font-size:10px;color:var(--text3);margin-top:6px">Sync: every 5 min</div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+
+<!-- ═══════════════ HOME VIEW ═══════════════ -->
+<div class="view active" id="view-home">
+  <div class="page-hdr">
+    <div class="page-title">Mission Control <span>Dashboard</span></div>
+    <div class="toolbar">
+      <div class="date-range-input">📅 5/10/2025 – 5/17/2025</div>
+      <button class="toolbar-btn primary" onclick="showNotif('info','Recommendation: DR-01 — BayWind Farm — 92% battery, optimal range')">★ Recommend Drone</button>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpi-grid">
+    <div class="kpi blue" onclick="showView('drones',document.querySelector('[data-view=drones]'))">
+      <div class="kpi-label">Total Drones</div>
+      <div class="kpi-val">6</div>
+      <div class="kpi-sub">fleet active</div>
+    </div>
+    <div class="kpi green" onclick="showView('drones',document.querySelector('[data-view=drones]'))">
+      <div class="kpi-label">Available</div>
+      <div class="kpi-val">3</div>
+      <div class="kpi-sub">ready to dispatch</div>
+    </div>
+    <div class="kpi cyan" onclick="showView('missions',document.querySelector('[data-view=missions]'))">
+      <div class="kpi-label">In Mission</div>
+      <div class="kpi-val">1</div>
+      <div class="kpi-sub">DR-02 active</div>
+    </div>
+    <div class="kpi amber" onclick="showView('turbines',document.querySelector('[data-view=turbines]'))">
+      <div class="kpi-label">Open Faults</div>
+      <div class="kpi-val">7</div>
+      <div class="kpi-sub">3 high priority</div>
+    </div>
+    <div class="kpi red" onclick="showView('missions',document.querySelector('[data-view=missions]'))">
+      <div class="kpi-label">SLA Breach Risk</div>
+      <div class="kpi-val">2</div>
+      <div class="kpi-sub">within 2hr window</div>
+    </div>
+    <div class="kpi yellow">
+      <div class="kpi-label">Weather Alerts</div>
+      <div class="kpi-val">1</div>
+      <div class="kpi-sub">Coastal Ridge</div>
+    </div>
+  </div>
+
+  <!-- Alerts + Map -->
+  <div class="home-grid">
+    <div class="card">
+      <div class="card-hdr">
+        <span class="card-title">🔴 System Alerts</span>
+        <span class="card-link" onclick="toggleAlerts()">View all</span>
+      </div>
+      <div class="card-body" id="alertsContainer">
+        <div class="alert-item red">
+          <div class="alert-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fa4d56" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12" y2="16"/></svg></div>
+          <div>
+            <div class="alert-title">High wind at Coastal Ridge</div>
+            <div class="alert-desc">Wind 28–35 kt · Flight status RESTRICTED · DR-02 in area</div>
+            <div class="alert-time">5/17 09:31 UTC · Auto-flagged by WFS</div>
+          </div>
+        </div>
+        <div class="alert-item amber">
+          <div class="alert-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ff832b" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/></svg></div>
+          <div>
+            <div class="alert-title">Battery low on DR-06 (45%)</div>
+            <div class="alert-desc">Below dispatch threshold. Charging at Base Station.</div>
+            <div class="alert-time">5/17 09:22 UTC</div>
+          </div>
+        </div>
+        <div class="alert-item yellow">
+          <div class="alert-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f1c21b" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/></svg></div>
+          <div>
+            <div class="alert-title">DR-03 under maintenance</div>
+            <div class="alert-desc">Scheduled service. ETA return: 5/18 14:00</div>
+            <div class="alert-time">5/17 07:00 UTC</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-hdr"><span class="card-title">Map View</span><span class="card-link" style="font-size:10px;color:var(--text3)">Live</span></div>
+      <div class="map-inner">
+        <svg class="map-svg" viewBox="0 0 400 260" xmlns="http://www.w3.org/2000/svg">
+          <rect width="400" height="260" fill="#1a2a1a"/>
+          <path d="M70 0 Q100 50 90 100 Q80 150 110 190 Q140 230 130 260" fill="none" stroke="#1e4d6e" stroke-width="14" opacity=".7"/>
+          <path d="M70 0 Q100 50 90 100 Q80 150 110 190 Q140 230 130 260" fill="none" stroke="#2d7aad" stroke-width="5" opacity=".5"/>
+          <ellipse cx="250" cy="80" rx="70" ry="40" fill="#1f3a1f" opacity=".6"/>
+          <ellipse cx="160" cy="200" rx="50" ry="28" fill="#1f3a1f" opacity=".5"/>
+          <ellipse cx="320" cy="190" rx="45" ry="32" fill="#1f3a1f" opacity=".5"/>
+          <path d="M200 20 Q270 40 290 90 Q310 140 270 170" fill="none" stroke="#2d4a2d" stroke-width="1" opacity=".6"/>
+          <!-- turbines -->
+          <g transform="translate(260,150)"><line x1="0" y1="-16" x2="0" y2="7" stroke="#4a5568" stroke-width="1.5"/><line x1="0" y1="-10" x2="-8" y2="-3" stroke="#4a5568" stroke-width="1"/><line x1="0" y1="-10" x2="8" y2="-3" stroke="#4a5568" stroke-width="1"/><line x1="0" y1="-10" x2="0" y2="-19" stroke="#4a5568" stroke-width="1"/>
+            <polygon points="0,-32 -8,-44 8,-44" fill="#fa4d56" stroke="#161616" stroke-width="1.2"/>
+            <text x="0" y="-36" text-anchor="middle" fill="white" font-size="7" font-weight="700">!</text>
+            <text x="12" y="14" fill="#a8a8a8" font-size="8">T-27</text>
+          </g>
+          <g transform="translate(330,55)"><line x1="0" y1="-16" x2="0" y2="7" stroke="#4a5568" stroke-width="1.5"/><line x1="0" y1="-10" x2="-8" y2="-3" stroke="#4a5568" stroke-width="1"/><line x1="0" y1="-10" x2="8" y2="-3" stroke="#4a5568" stroke-width="1"/><line x1="0" y1="-10" x2="0" y2="-19" stroke="#4a5568" stroke-width="1"/></g>
+          <g transform="translate(355,130)"><line x1="0" y1="-16" x2="0" y2="7" stroke="#4a5568" stroke-width="1.5"/><line x1="0" y1="-10" x2="-8" y2="-3" stroke="#4a5568" stroke-width="1"/><line x1="0" y1="-10" x2="8" y2="-3" stroke="#4a5568" stroke-width="1"/><line x1="0" y1="-10" x2="0" y2="-19" stroke="#4a5568" stroke-width="1"/></g>
+          <!-- drones -->
+          <g transform="translate(160,75)"><circle r="13" fill="#161616" stroke="#42be65" stroke-width="2"/><circle r="8" fill="rgba(66,190,101,.15)"/><text y="4" text-anchor="middle" fill="#42be65" font-size="9">✈</text><text x="18" y="4" fill="#f4f4f4" font-size="8" font-weight="600">DR-01</text></g>
+          <g transform="translate(290,48)"><circle r="13" fill="#161616" stroke="#ff832b" stroke-width="2"/><circle r="8" fill="rgba(255,131,43,.15)"/><text y="4" text-anchor="middle" fill="#ff832b" font-size="9">✈</text><text x="18" y="4" fill="#f4f4f4" font-size="8" font-weight="600">DR-02</text></g>
+          <g transform="translate(150,195)"><circle r="13" fill="#161616" stroke="#42be65" stroke-width="2"/><circle r="8" fill="rgba(66,190,101,.15)"/><text y="4" text-anchor="middle" fill="#42be65" font-size="9">✈</text><text x="18" y="4" fill="#f4f4f4" font-size="8" font-weight="600">DR-05</text></g>
+        </svg>
+        <div class="map-ctrls">
+          <button class="map-btn">+</button>
+          <button class="map-btn">−</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Missions -->
+    <div class="card span2">
+      <div class="card-hdr"><span class="card-title">Recent Missions</span><span class="card-link" onclick="showView('missions',document.querySelector('[data-view=missions]'))">View all →</span></div>
+      <div class="table-wrap" style="border:none">
+        <table>
+          <thead><tr><th>Mission ID</th><th>Drone</th><th>Turbine</th><th>Site</th><th>Status</th><th>SLA</th></tr></thead>
+          <tbody>
+            <tr onclick="showView('missions',document.querySelector('[data-view=missions]'))"><td class="td-mono">M-1012</td><td class="td-mono" style="color:#33b1ff">DR-02</td><td class="td-mono">T-21</td><td class="td-muted">Coastal Ridge</td><td><span class="badge b-green"><span class="bdot" style="background:#42be65"></span>Completed</span></td><td class="td-mono td-muted">5/17 11:00</td></tr>
+            <tr onclick="showView('missions',document.querySelector('[data-view=missions]'))"><td class="td-mono">M-1011</td><td class="td-mono" style="color:#33b1ff">DR-01</td><td class="td-mono">T-18</td><td class="td-muted">BayWind Farm</td><td><span class="badge b-green"><span class="bdot" style="background:#42be65"></span>Completed</span></td><td class="td-mono td-muted">5/17 09:30</td></tr>
+            <tr onclick="showView('missions',document.querySelector('[data-view=missions]'))"><td class="td-mono">M-1010</td><td class="td-mono" style="color:#33b1ff">DR-04</td><td class="td-mono">T-12</td><td class="td-muted">Hilltop Farm</td><td><span class="badge b-amber"><span class="bdot" style="background:#ff832b"></span>In Progress</span></td><td class="td-mono" style="color:#fa4d56">5/17 12:00</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ DRONES VIEW ═══════════════ -->
+<div class="view" id="view-drones">
+  <div class="page-hdr">
+    <div class="page-title">Drone <span>Fleet</span></div>
+    <div class="toolbar">
+      <div class="search-wrap">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input class="search-input" id="droneSearch" placeholder="Search drone ID, location…" oninput="filterDrones()"/>
+      </div>
+      <select class="filter-sel" id="droneStatusFilter" onchange="filterDrones()">
+        <option value="">Status: All</option>
+        <option>Available</option>
+        <option>In Mission</option>
+        <option>Maintenance</option>
+        <option>Charging</option>
+      </select>
+      <select class="filter-sel" id="droneSiteFilter" onchange="filterDrones()">
+        <option value="">Location: All</option>
+        <option>BayWind Farm</option>
+        <option>Coastal Ridge</option>
+        <option>Hilltop Farm</option>
+        <option>Base Station</option>
+      </select>
+      <button class="toolbar-btn primary" onclick="showNotif('info','Recommended: DR-01 — 92% battery, BayWind Farm')">★ Recommend</button>
+    </div>
+  </div>
+
+  <!-- sub-tabs: Fleet / Missions -->
+  <div class="sub-tabs">
+    <button class="sub-tab active" onclick="showDroneSubTab('fleet',this)">Fleet Overview</button>
+    <button class="sub-tab" onclick="showDroneSubTab('drone-missions',this)">Drone Missions</button>
+  </div>
+
+  <!-- Fleet sub-tab -->
+  <div id="droneTab-fleet">
+    <div class="split">
+      <div class="split-main">
+        <div class="section-hdr"><span class="section-title">Drone Fleet</span><div class="section-line"></div><span class="section-count" id="droneTotalCount">6 drones</span></div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th onclick="sortDrones('id')">Drone ID ↕</th>
+                <th onclick="sortDrones('status')">Status ↕</th>
+                <th onclick="sortDrones('battery')">Battery ↕</th>
+                <th onclick="sortDrones('location')">Location ↕</th>
+                <th>Last Sync</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="droneTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="split-panel">
+        <div class="panel-tabs">
+          <button class="ptab active" onclick="switchPanel(this,'drone-overview')">Overview</button>
+          <button class="ptab" onclick="switchPanel(this,'drone-detail')">Detail</button>
+          <button class="ptab" onclick="switchPanel(this,'drone-weather')">Weather</button>
+        </div>
+        <div class="panel-body" id="panel-drone-overview">
+          <div class="empty-state">Select a drone to view details</div>
+        </div>
+        <div class="panel-body" id="panel-drone-detail" style="display:none">
+          <div class="empty-state">Select a drone</div>
+        </div>
+        <div class="panel-body" id="panel-drone-weather" style="display:none">
+          <div class="panel-section">Weather Conditions</div>
+          <div style="display:flex;flex-direction:column;gap:6px;margin-top:8px">
+            <div class="detail-row"><span class="dr-label">BayWind Farm</span><span class="dr-val ok">CLEAR · 8 kt</span></div>
+            <div class="detail-row"><span class="dr-label">Coastal Ridge</span><span class="dr-val danger">RESTRICTED · 31 kt</span></div>
+            <div class="detail-row"><span class="dr-label">Hilltop Farm</span><span class="dr-val ok">CLEAR · 11 kt</span></div>
+            <div class="detail-row"><span class="dr-label">Base Station</span><span class="dr-val ok">CLEAR · 5 kt</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Drone Missions sub-tab -->
+  <div id="droneTab-drone-missions" style="display:none">
+    <div class="section-hdr" style="margin-top:12px"><span class="section-title">Missions linked to fleet</span><div class="section-line"></div></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Mission ID</th><th>Drone</th><th>Turbine</th><th>Site</th><th>Status</th><th>SLA</th><th>Operator</th><th>Actions</th></tr></thead>
+        <tbody id="droneMissionsBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ TURBINES VIEW ═══════════════ -->
+<div class="view" id="view-turbines">
+  <div class="page-hdr">
+    <div class="page-title">Turbines &amp; <span>Faults</span></div>
+    <div class="toolbar">
+      <div class="search-wrap">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input class="search-input" id="turbineSearch" placeholder="Search turbine ID, fault type…" oninput="filterTurbines()"/>
+      </div>
+      <select class="filter-sel" id="turbineSeverityFilter" onchange="filterTurbines()">
+        <option value="">Severity: All</option>
+        <option>High</option>
+        <option>Med</option>
+        <option>Low</option>
+      </select>
+      <select class="filter-sel" id="turbineSiteFilter2" onchange="filterTurbines()">
+        <option value="">Site: All</option>
+        <option>BayWind Farm</option>
+        <option>Coastal Ridge</option>
+        <option>Hilltop Farm</option>
+      </select>
+      <select class="filter-sel" id="turbineStatusFilter" onchange="filterTurbines()">
+        <option value="">Status: All</option>
+        <option>New</option>
+        <option>In Review</option>
+        <option>Review</option>
+        <option>Closed</option>
+      </select>
+      <button class="toolbar-btn danger" onclick="showNotif('info','Fault report generated and sent to maintenance queue')">Create Fault Report</button>
+    </div>
+  </div>
+
+  <div class="sub-tabs">
+    <button class="sub-tab active" onclick="showTurbineSubTab('turbine-list',this)">Turbine Status</button>
+    <button class="sub-tab" onclick="showTurbineSubTab('fault-list',this)">Open Faults <span class="nav-badge amber" style="margin-left:4px">7</span></button>
+  </div>
+
+  <!-- Turbine list -->
+  <div id="turbineTab-turbine-list">
+    <div class="split" style="margin-top:12px">
+      <div class="split-main">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Turbine ID</th><th>Site</th><th>Health</th><th>Last Inspection</th><th>Active Faults</th><th>Assigned Drone</th><th>Actions</th></tr></thead>
+            <tbody id="turbineTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="split-panel">
+        <div class="panel-tabs">
+          <button class="ptab active" onclick="switchTurbinePanel(this,'t-overview')">Overview</button>
+          <button class="ptab" onclick="switchTurbinePanel(this,'t-faults')">Faults</button>
+        </div>
+        <div class="panel-body" id="panel-t-overview"><div class="empty-state">Select a turbine</div></div>
+        <div class="panel-body" id="panel-t-faults" style="display:none"><div class="empty-state">Select a turbine</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fault list -->
+  <div id="turbineTab-fault-list" style="display:none">
+    <div class="table-wrap" style="margin-top:12px">
+      <table>
+        <thead><tr><th>Turbine</th><th>Site</th><th>Severity</th><th>Type</th><th>Detected</th><th>Status</th><th>Assigned</th><th>Actions</th></tr></thead>
+        <tbody id="faultTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ MISSIONS VIEW ═══════════════ -->
+<div class="view" id="view-missions">
+  <div class="page-hdr">
+    <div class="page-title">Mission <span>Control</span></div>
+    <div class="toolbar">
+      <div class="search-wrap">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input class="search-input" id="missionSearch" placeholder="Search mission ID, turbine…" oninput="filterMissions()"/>
+      </div>
+      <select class="filter-sel" id="missionStatusFilter" onchange="filterMissions()">
+        <option value="">Status: All</option>
+        <option>Pending</option>
+        <option>In Progress</option>
+        <option>Completed</option>
+        <option>Aborted</option>
+      </select>
+      <select class="filter-sel" id="missionSiteFilter" onchange="filterMissions()">
+        <option value="">Site: All</option>
+        <option>BayWind Farm</option>
+        <option>Coastal Ridge</option>
+        <option>Hilltop Farm</option>
+      </select>
+    </div>
+  </div>
+  <div class="split">
+    <div class="split-main">
+      <div class="section-hdr"><span class="section-title">All Missions</span><div class="section-line"></div><span class="section-count" id="missionCount">0</span></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Mission ID</th><th>Drone</th><th>Turbine</th><th>Site</th><th>Status</th><th>SLA</th><th>Operator</th><th>Actions</th></tr></thead>
+          <tbody id="missionTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="split-panel">
+      <div class="panel-tabs">
+        <button class="ptab active" onclick="switchMissionPanel(this,'m-overview')">Overview</button>
+        <button class="ptab" onclick="switchMissionPanel(this,'m-detail')">Detail</button>
+        <button class="ptab" onclick="switchMissionPanel(this,'m-weather')">Weather</button>
+      </div>
+      <div class="panel-body" id="panel-m-overview"><div class="empty-state">Select a mission</div></div>
+      <div class="panel-body" id="panel-m-detail" style="display:none"><div class="empty-state">Select a mission</div></div>
+      <div class="panel-body" id="panel-m-weather" style="display:none">
+        <div class="panel-section">Weather Forecast</div>
+        <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-top:8px">
+          ${['09:00','10:00','11:00','12:00','13:00','14:00'].map((t,i)=>{
+            const winds=['8kt','10kt','31kt','28kt','18kt','12kt'];
+            const cls=['ok','ok','bad','bad','warn','ok'];
+            const ic=['🌤','🌤','⛈','⛈','🌬','🌤'];
+            return `<div style="flex-shrink:0;background:var(--layer2);border:1px solid var(--border);padding:7px 9px;text-align:center;min-width:52px"><div style="font-family:var(--font-mono);font-size:9px;color:var(--text3)">${t}</div><div style="font-size:14px;margin:3px 0">${ic[i]}</div><div style="font-family:var(--font-mono);font-size:10px;font-weight:600;color:${cls[i]==='ok'?'#42be65':cls[i]==='warn'?'#f1c21b':'#fa4d56'}">${winds[i]}</div></div>`;
+          }).join('')}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ SETTINGS VIEW ═══════════════ -->
+<div class="view" id="view-settings">
+  <div class="page-hdr">
+    <div class="page-title">System <span>Settings</span></div>
+    <button class="toolbar-btn primary" onclick="showNotif('success','Settings saved successfully')">Save Changes</button>
+  </div>
+  <div class="settings-grid">
+    <div class="settings-card">
+      <div class="settings-card-hdr"><div class="settings-card-title">Sync &amp; Data</div></div>
+      <div class="settings-card-body">
+        <div class="setting-row">
+          <div><div class="setting-label">Data Sync Interval</div><div class="setting-sub">How often to pull live data</div></div>
+          <select class="setting-select"><option>Every 5 min</option><option>Every 1 min</option><option>Every 10 min</option></select>
+        </div>
+        <div class="setting-row">
+          <div><div class="setting-label">Auto-sync on open</div><div class="setting-sub">Fetch fresh data on load</div></div>
+          <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+        </div>
+        <div class="setting-row">
+          <div><div class="setting-label">Offline cache</div><div class="setting-sub">Store last 24h locally</div></div>
+          <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+        </div>
+      </div>
+    </div>
+    <div class="settings-card">
+      <div class="settings-card-hdr"><div class="settings-card-title">Alerts &amp; Notifications</div></div>
+      <div class="settings-card-body">
+        <div class="setting-row">
+          <div><div class="setting-label">Critical fault alerts</div><div class="setting-sub">Blade crack, gearbox failure</div></div>
+          <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+        </div>
+        <div class="setting-row">
+          <div><div class="setting-label">Battery threshold</div><div class="setting-sub">Alert below this level</div></div>
+          <input class="setting-input" type="number" value="50" min="0" max="100" style="width:70px"/>
+        </div>
+        <div class="setting-row">
+          <div><div class="setting-label">Weather alerts</div><div class="setting-sub">Wind, visibility warnings</div></div>
+          <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+        </div>
+        <div class="setting-row">
+          <div><div class="setting-label">SLA breach warnings</div><div class="setting-sub">Alert 2hr before breach</div></div>
+          <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+        </div>
+      </div>
+    </div>
+    <div class="settings-card">
+      <div class="settings-card-hdr"><div class="settings-card-title">Dispatch Rules</div></div>
+      <div class="settings-card-body">
+        <div class="setting-row">
+          <div><div class="setting-label">Auto fault → maintenance handoff</div><div class="setting-sub">Route high faults automatically</div></div>
+          <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+        </div>
+        <div class="setting-row">
+          <div><div class="setting-label">Min battery for dispatch</div></div>
+          <input class="setting-input" type="number" value="30" min="0" max="100" style="width:70px"/>
+        </div>
+        <div class="setting-row">
+          <div><div class="setting-label">Require manager approval for high-wind dispatch</div></div>
+          <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+        </div>
+      </div>
+    </div>
+    <div class="settings-card">
+      <div class="settings-card-hdr"><div class="settings-card-title">Display</div></div>
+      <div class="settings-card-body">
+        <div class="setting-row">
+          <div><div class="setting-label">Theme</div></div>
+          <select class="setting-select" onchange="document.documentElement.setAttribute('data-theme',this.value)"><option value="dark">Dark</option><option value="light">Light</option></select>
+        </div>
+        <div class="setting-row">
+          <div><div class="setting-label">Default map view</div></div>
+          <select class="setting-select"><option>All sites</option><option>BayWind Farm</option><option>Coastal Ridge</option></select>
+        </div>
+        <div class="setting-row">
+          <div><div class="setting-label">Role</div><div class="setting-sub">Current access level</div></div>
+          <span class="badge b-blue">Ops Manager</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</main>
+</div>
+
+<!-- DISPATCH MODAL -->
+<div class="modal-overlay" id="dispatchModal">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div><div class="modal-title">Dispatch Mission</div><div class="modal-sub" id="dModalSub"></div></div>
+      <button class="modal-close" onclick="closeModal('dispatchModal')">✕</button>
+    </div>
+    <div class="modal-body" id="dModalBody"></div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal('dispatchModal')">Cancel</button>
+      <button class="btn-primary" id="dConfirmBtn" onclick="confirmDispatch()">Confirm Dispatch</button>
+    </div>
+  </div>
+</div>
+
+<!-- ABORT MODAL -->
+<div class="modal-overlay" id="abortModal">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div><div class="modal-title">Abort Mission</div><div class="modal-sub" id="aModalSub"></div></div>
+      <button class="modal-close" onclick="closeModal('abortModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group"><label>Abort Reason *</label><select class="form-sel" id="abortReason"><option value="">— Select reason —</option><option>Weather conditions</option><option>Equipment failure</option><option>Safety concern</option><option>Operator request</option><option>Site access issue</option></select></div>
+      <div class="form-group"><label>Manager Comment *</label><textarea class="form-ta" id="abortComment" placeholder="Provide details for the abort log…"></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal('abortModal')">Cancel</button>
+      <button class="btn-primary danger" onclick="confirmAbort()">Confirm Abort</button>
+    </div>
+  </div>
+</div>
+
+<!-- NOTIFICATION -->
+<div class="notif" id="notif"></div>
+
+<script>
+/* ─── DATA ─────────────────────────────────────────────────────────── */
+const drones = [
+  {id:'DR-01',status:'Available',battery:92,location:'BayWind Farm',sync:'2 min ago'},
+  {id:'DR-02',status:'In Mission',battery:68,location:'Coastal Ridge',sync:'1 min ago'},
+  {id:'DR-03',status:'Maintenance',battery:null,location:'Base Station',sync:'10 min ago'},
+  {id:'DR-04',status:'Available',battery:85,location:'Hilltop Farm',sync:'3 min ago'},
+  {id:'DR-05',status:'Available',battery:77,location:'BayWind Farm',sync:'1 min ago'},
+  {id:'DR-06',status:'Charging',battery:45,location:'Base Station',sync:'4 min ago'},
+];
+
+const faults = [
+  {id:'F-001',turbine:'T-27',site:'Coastal Ridge',severity:'High',type:'Blade Crack',detected:'5/17 09:15',status:'New',assigned:'—'},
+  {id:'F-002',turbine:'T-14',site:'BayWind Farm',severity:'Med',type:'Gearbox Temp',detected:'5/17 08:40',status:'In Review',assigned:'J.Smith'},
+  {id:'F-003',turbine:'T-08',site:'Hilltop Farm',severity:'Low',type:'Vibration',detected:'5/17 07:55',status:'Review',assigned:'—'},
+  {id:'F-004',turbine:'T-27',site:'Coastal Ridge',severity:'High',type:'Structural Stress',detected:'5/16 14:20',status:'In Review',assigned:'K.Lee'},
+  {id:'F-005',turbine:'T-33',site:'BayWind Farm',severity:'Med',type:'Oil Leak',detected:'5/16 11:00',status:'New',assigned:'—'},
+  {id:'F-006',turbine:'T-19',site:'Hilltop Farm',severity:'Low',type:'Sensor Drift',detected:'5/15 16:45',status:'Review',assigned:'—'},
+  {id:'F-007',turbine:'T-05',site:'BayWind Farm',severity:'High',type:'Blade Erosion',detected:'5/15 08:10',status:'In Review',assigned:'M.Chen'},
+];
+
+const turbines = [
+  {id:'T-27',site:'Coastal Ridge',health:'Critical',lastInspect:'5/10/2025',faults:2,drone:'DR-02'},
+  {id:'T-14',site:'BayWind Farm',health:'Degraded',lastInspect:'5/08/2025',faults:1,drone:'—'},
+  {id:'T-08',site:'Hilltop Farm',health:'Normal',lastInspect:'5/12/2025',faults:1,drone:'DR-04'},
+  {id:'T-18',site:'BayWind Farm',health:'Normal',lastInspect:'5/17/2025',faults:0,drone:'—'},
+  {id:'T-21',site:'Coastal Ridge',health:'Degraded',lastInspect:'5/17/2025',faults:1,drone:'—'},
+  {id:'T-33',site:'BayWind Farm',health:'Degraded',lastInspect:'5/14/2025',faults:1,drone:'—'},
+  {id:'T-12',site:'Hilltop Farm',health:'Normal',lastInspect:'5/13/2025',faults:0,drone:'DR-04'},
+];
+
+const missions = [
+  {id:'M-1012',drone:'DR-02',turbine:'T-21',site:'Coastal Ridge',status:'Completed',sla:'5/17 11:00',operator:'K.Lee',battery:68,weatherRisk:'bad',concurrent:false},
+  {id:'M-1011',drone:'DR-01',turbine:'T-18',site:'BayWind Farm',status:'Completed',sla:'5/17 09:30',operator:'J.Smith',battery:92,weatherRisk:'ok',concurrent:false},
+  {id:'M-1010',drone:'DR-04',turbine:'T-12',site:'Hilltop Farm',status:'In Progress',sla:'5/17 12:00',operator:'M.Chen',battery:85,weatherRisk:'ok',concurrent:false},
+  {id:'M-1009',drone:'DR-05',turbine:'T-08',site:'Hilltop Farm',status:'Pending',sla:'5/17 14:00',operator:'R.Jones',battery:77,weatherRisk:'ok',concurrent:false},
+  {id:'M-1008',drone:'DR-01',turbine:'T-33',site:'BayWind Farm',status:'Pending',sla:'5/17 15:30',operator:'J.Smith',battery:92,weatherRisk:'ok',concurrent:true},
+  {id:'M-1007',drone:'DR-06',turbine:'T-05',site:'BayWind Farm',status:'Aborted',sla:'5/16 16:00',operator:'M.Chen',battery:45,weatherRisk:'warn',concurrent:false},
+];
+
+/* ─── NAVIGATION ──────────────────────────────────────────────────── */
+function showView(name, el){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('view-'+name).classList.add('active');
+  if(el) el.classList.add('active');
+  if(name==='drones') renderDrones();
+  if(name==='turbines') renderTurbines();
+  if(name==='missions') renderMissions();
+}
+
+/* ─── CLOCK ───────────────────────────────────────────────────────── */
+function updateClock(){
+  const now=new Date();
+  document.getElementById('shellTime').textContent=
+    now.getUTCHours().toString().padStart(2,'0')+':'+
+    now.getUTCMinutes().toString().padStart(2,'0')+' UTC';
+}
+setInterval(updateClock,1000);updateClock();
+
+/* ─── THEME ───────────────────────────────────────────────────────── */
+function toggleTheme(){
+  const t=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';
+  document.documentElement.setAttribute('data-theme',t);
+}
+
+/* ─── NOTIFICATION ────────────────────────────────────────────────── */
+let notifTimer;
+function showNotif(type,msg){
+  const n=document.getElementById('notif');
+  n.className='notif '+type+' show';
+  n.textContent=msg;
+  clearTimeout(notifTimer);
+  notifTimer=setTimeout(()=>n.classList.remove('show'),3500);
+}
+
+/* ─── ALERTS TOGGLE ───────────────────────────────────────────────── */
+let alertsExpanded=false;
+function toggleAlerts(){alertsExpanded=!alertsExpanded;showNotif('info','Navigating to alerts');}
+
+/* ─── NOTIF PANEL ─────────────────────────────────────────────────── */
+function toggleNotifPanel(){showNotif('info','3 active alerts — High wind, Low battery DR-06, DR-03 maintenance');}
+
+/* ─── BADGE HELPERS ───────────────────────────────────────────────── */
+function statusBadge(s){
+  if(s==='Available') return 'b-green';
+  if(s==='In Mission') return 'b-amber';
+  if(s==='Maintenance') return 'b-red';
+  if(s==='Charging') return 'b-blue';
+  if(s==='Completed') return 'b-green';
+  if(s==='In Progress') return 'b-amber';
+  if(s==='Pending') return 'b-cyan';
+  if(s==='Aborted') return 'b-gray';
+  return 'b-gray';
+}
+function severityBadge(s){
+  if(s==='High') return 'b-red';
+  if(s==='Med') return 'b-amber';
+  return 'b-blue';
+}
+function healthBadge(h){
+  if(h==='Critical') return 'b-red';
+  if(h==='Degraded') return 'b-amber';
+  return 'b-green';
+}
+function battColor(b){return b>60?'#42be65':b>30?'#ff832b':'#fa4d56';}
+
+/* ─── DRONES ──────────────────────────────────────────────────────── */
+let droneSort={col:'id',asc:true};
+function renderDrones(){
+  const q=(document.getElementById('droneSearch')||{value:''}).value.toLowerCase();
+  const sf=(document.getElementById('droneStatusFilter')||{value:''}).value;
+  const lf=(document.getElementById('droneSiteFilter')||{value:''}).value;
+  let data=[...drones].filter(d=>{
+    if(sf && d.status!==sf) return false;
+    if(lf && d.location!==lf) return false;
+    if(q && !d.id.toLowerCase().includes(q) && !d.location.toLowerCase().includes(q)) return false;
+    return true;
+  });
+  data.sort((a,b)=>{
+    let av=a[droneSort.col]||'',bv=b[droneSort.col]||'';
+    if(typeof av==='number') return droneSort.asc?av-bv:bv-av;
+    return droneSort.asc?String(av).localeCompare(String(bv)):String(bv).localeCompare(String(av));
+  });
+  const body=document.getElementById('droneTableBody');
+  if(!body) return;
+  document.getElementById('droneTotalCount').textContent=data.length+' drones';
+  body.innerHTML=data.map(d=>`
+    <tr onclick="selectDrone('${d.id}')">
+      <td class="td-mono" style="color:#33b1ff">${d.id}</td>
+      <td><span class="badge ${statusBadge(d.status)}">${d.status}</span></td>
+      <td>${d.battery!=null?`<div class="batt"><div class="batt-bar"><div class="batt-fill" style="width:${d.battery}%;background:${battColor(d.battery)}"></div></div><span class="batt-val" style="color:${battColor(d.battery)}">${d.battery}%</span></div>`:'<span style="color:var(--text3)">—</span>'}</td>
+      <td class="td-muted">${d.location}</td>
+      <td class="td-mono td-muted">${d.sync}</td>
+      <td><div class="act-cell">
+        ${d.status==='Available'?`<button class="act-btn dispatch" onclick="event.stopPropagation();openDispatchForDrone('${d.id}')">Dispatch</button>`:''}
+        <button class="act-btn review" onclick="event.stopPropagation();selectDrone('${d.id}')">View</button>
+      </div></td>
+    </tr>
+  `).join('');
+  renderDroneMissions();
+}
+function filterDrones(){renderDrones();}
+function sortDrones(col){
+  if(droneSort.col===col) droneSort.asc=!droneSort.asc; else{droneSort.col=col;droneSort.asc=true;}
+  renderDrones();
+}
+function selectDrone(id){
+  const d=drones.find(x=>x.id===id);
+  if(!d) return;
+  document.querySelectorAll('#droneTableBody tr').forEach(r=>r.classList.remove('selected'));
+  const rows=document.querySelectorAll('#droneTableBody tr');
+  rows.forEach(r=>{if(r.querySelector('td')&&r.querySelector('td').textContent===id)r.classList.add('selected');});
+  const linkedMissions=missions.filter(m=>m.drone===id);
+  document.getElementById('panel-drone-overview').innerHTML=`
+    <div class="panel-section">${id} — Status</div>
+    <div class="detail-row"><span class="dr-label">Status</span><span class="badge ${statusBadge(d.status)}">${d.status}</span></div>
+    <div class="detail-row"><span class="dr-label">Battery</span><span class="dr-val" style="color:${battColor(d.battery||0)}">${d.battery!=null?d.battery+'%':'N/A'}</span></div>
+    <div class="detail-row"><span class="dr-label">Location</span><span class="dr-val">${d.location}</span></div>
+    <div class="detail-row"><span class="dr-label">Last Sync</span><span class="dr-val">${d.sync}</span></div>
+    <div class="panel-section" style="margin-top:14px">Linked Missions (${linkedMissions.length})</div>
+    ${linkedMissions.length?linkedMissions.map(m=>`<div class="detail-row"><span class="dr-label td-mono">${m.id}</span><span class="badge ${statusBadge(m.status)}">${m.status}</span></div>`).join(''):'<div style="font-size:11px;color:var(--text3);font-family:var(--font-mono);padding:8px 0">No missions</div>'}
+    ${d.status==='Available'?`<div style="margin-top:12px"><button class="btn-primary" style="width:100%;font-size:11px" onclick="openDispatchForDrone('${id}')">DISPATCH MISSION</button></div>`:''}
+  `;
+}
+function openDispatchForDrone(did){
+  const d=drones.find(x=>x.id===did);
+  const m=missions.find(x=>x.status==='Pending')||{id:'M-NEW',turbine:'—',site:'—',sla:'—',operator:'—',battery:d.battery,weatherRisk:'ok',concurrent:false};
+  openDispatch({...m,drone:did,battery:d.battery});
+}
+function renderDroneMissions(){
+  const body=document.getElementById('droneMissionsBody');
+  if(!body) return;
+  body.innerHTML=missions.map(m=>`
+    <tr onclick="selectMission('${m.id}','drone')">
+      <td class="td-mono">${m.id}</td>
+      <td class="td-mono" style="color:#33b1ff">${m.drone}</td>
+      <td class="td-mono">${m.turbine}</td>
+      <td class="td-muted">${m.site}</td>
+      <td><span class="badge ${statusBadge(m.status)}">${m.status}</span></td>
+      <td class="td-mono td-muted">${m.sla}</td>
+      <td class="td-muted">${m.operator}</td>
+      <td><div class="act-cell">
+        ${m.status==='Pending'?`<button class="act-btn dispatch" onclick="event.stopPropagation();openDispatch(missions.find(x=>x.id==='${m.id}'))">Dispatch</button>`:''}
+        ${m.status==='In Progress'?`<button class="act-btn abort" onclick="event.stopPropagation();openAbort('${m.id}')">Abort</button>`:''}
+        <button class="act-btn review" onclick="event.stopPropagation();selectMission('${m.id}','drone')">View</button>
+      </div></td>
+    </tr>
+  `).join('');
+}
+
+function showDroneSubTab(name,el){
+  document.querySelectorAll('[id^="droneTab-"]').forEach(t=>t.style.display='none');
+  document.querySelectorAll('.sub-tabs .sub-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('droneTab-'+name).style.display='block';
+  if(el) el.classList.add('active');
+}
+
+/* ─── TURBINES ────────────────────────────────────────────────────── */
+function renderTurbines(){
+  filterTurbines();
+  renderFaults();
+}
+function filterTurbines(){
+  const q=(document.getElementById('turbineSearch')||{value:''}).value.toLowerCase();
+  const sf=(document.getElementById('turbineSeverityFilter')||{value:''}).value;
+  const siteF=(document.getElementById('turbineSiteFilter2')||{value:''}).value;
+  const stF=(document.getElementById('turbineStatusFilter')||{value:''}).value;
+  renderFaults(q,sf,siteF,stF);
+  renderTurbineList(q,siteF);
+}
+function renderTurbineList(q='',siteF=''){
+  const body=document.getElementById('turbineTableBody');
+  if(!body) return;
+  let data=turbines.filter(t=>{
+    if(siteF && t.site!==siteF) return false;
+    if(q && !t.id.toLowerCase().includes(q)) return false;
+    return true;
+  });
+  body.innerHTML=data.map(t=>`
+    <tr onclick="selectTurbine('${t.id}')">
+      <td class="td-mono" style="color:#33b1ff">${t.id}</td>
+      <td class="td-muted">${t.site}</td>
+      <td><span class="badge ${healthBadge(t.health)}">${t.health}</span></td>
+      <td class="td-mono td-muted">${t.lastInspect}</td>
+      <td>${t.faults>0?`<span class="badge ${t.faults>1?'b-red':'b-amber'}">${t.faults} fault${t.faults>1?'s':''}</span>`:'<span class="badge b-green">Clear</span>'}</td>
+      <td class="td-mono" style="color:${t.drone!=='—'?'#33b1ff':'var(--text3)'}">${t.drone}</td>
+      <td><div class="act-cell">
+        <button class="act-btn dispatch" onclick="event.stopPropagation();showNotif('info','Dispatching to ${t.id}…')">Dispatch</button>
+        <button class="act-btn review" onclick="event.stopPropagation();selectTurbine('${t.id}')">View</button>
+      </div></td>
+    </tr>
+  `).join('');
+}
+function selectTurbine(id){
+  const t=turbines.find(x=>x.id===id);
+  const tFaults=faults.filter(f=>f.turbine===id);
+  document.getElementById('panel-t-overview').innerHTML=`
+    <div class="panel-section">${id} — Overview</div>
+    <div class="detail-row"><span class="dr-label">Health</span><span class="badge ${healthBadge(t.health)}">${t.health}</span></div>
+    <div class="detail-row"><span class="dr-label">Site</span><span class="dr-val">${t.site}</span></div>
+    <div class="detail-row"><span class="dr-label">Last Inspection</span><span class="dr-val">${t.lastInspect}</span></div>
+    <div class="detail-row"><span class="dr-label">Assigned Drone</span><span class="dr-val info">${t.drone}</span></div>
+    <div class="detail-row"><span class="dr-label">Active Faults</span><span class="dr-val ${t.faults>0?'danger':''}">${t.faults}</span></div>
+    <div style="margin-top:12px"><button class="btn-primary" style="width:100%;font-size:11px" onclick="showNotif('info','Dispatch to ${id}')">DISPATCH DRONE</button></div>
+  `;
+  document.getElementById('panel-t-faults').innerHTML=tFaults.length?`
+    <div class="panel-section">${id} — Faults (${tFaults.length})</div>
+    ${tFaults.map(f=>`
+      <div style="background:var(--layer2);border:1px solid var(--border);padding:8px 10px;margin-bottom:6px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+          <span class="td-mono" style="font-size:11px">${f.type}</span>
+          <span class="badge ${severityBadge(f.severity)}">${f.severity}</span>
+        </div>
+        <div style="font-size:10px;color:var(--text3);font-family:var(--font-mono)">${f.detected} · ${f.status}</div>
+      </div>
+    `).join('')}
+  `:'<div class="empty-state">No faults for this turbine</div>';
+}
+function renderFaults(q='',sf='',siteF='',stF=''){
+  const body=document.getElementById('faultTableBody');
+  if(!body) return;
+  let data=faults.filter(f=>{
+    if(sf && f.severity!==sf) return false;
+    if(siteF && f.site!==siteF) return false;
+    if(stF && f.status!==stF) return false;
+    if(q && !f.turbine.toLowerCase().includes(q) && !f.type.toLowerCase().includes(q)) return false;
+    return true;
+  });
+  body.innerHTML=data.map(f=>`
+    <tr>
+      <td class="td-mono" style="color:#33b1ff">${f.turbine}</td>
+      <td class="td-muted">${f.site}</td>
+      <td><span class="badge ${severityBadge(f.severity)}">${f.severity}</span></td>
+      <td>${f.type}</td>
+      <td class="td-mono td-muted">${f.detected}</td>
+      <td><span class="badge b-gray">${f.status}</span></td>
+      <td class="td-muted">${f.assigned}</td>
+      <td><div class="act-cell">
+        <button class="act-btn dispatch" onclick="showNotif('info','Dispatching drone to ${f.turbine}')">Dispatch</button>
+        <button class="act-btn review" onclick="showNotif('info','Opening fault ${f.id}…')">Review</button>
+      </div></td>
+    </tr>
+  `).join('');
+}
+function showTurbineSubTab(name,el){
+  document.querySelectorAll('[id^="turbineTab-"]').forEach(t=>t.style.display='none');
+  const views=document.querySelectorAll('#view-turbines .sub-tab');
+  views.forEach(t=>t.classList.remove('active'));
+  document.getElementById('turbineTab-'+name).style.display='block';
+  if(el) el.classList.add('active');
+}
+
+/* ─── MISSIONS ────────────────────────────────────────────────────── */
+function renderMissions(){
+  filterMissions();
+}
+function filterMissions(){
+  const q=(document.getElementById('missionSearch')||{value:''}).value.toLowerCase();
+  const sf=(document.getElementById('missionStatusFilter')||{value:''}).value;
+  const siteF=(document.getElementById('missionSiteFilter')||{value:''}).value;
+  let data=missions.filter(m=>{
+    if(sf && m.status!==sf) return false;
+    if(siteF && m.site!==siteF) return false;
+    if(q && !m.id.toLowerCase().includes(q) && !m.turbine.toLowerCase().includes(q) && !m.drone.toLowerCase().includes(q)) return false;
+    return true;
+  });
+  const body=document.getElementById('missionTableBody');
+  if(!body) return;
+  document.getElementById('missionCount').textContent=data.length+' missions';
+  body.innerHTML=data.map(m=>`
+    <tr onclick="selectMission('${m.id}','mission')">
+      <td class="td-mono">${m.id}</td>
+      <td class="td-mono" style="color:#33b1ff">${m.drone}</td>
+      <td class="td-mono">${m.turbine}</td>
+      <td class="td-muted">${m.site}</td>
+      <td><span class="badge ${statusBadge(m.status)}">${m.status}</span></td>
+      <td class="td-mono td-muted">${m.sla}</td>
+      <td class="td-muted">${m.operator}</td>
+      <td><div class="act-cell">
+        ${m.status==='Pending'?`<button class="act-btn dispatch" onclick="event.stopPropagation();openDispatch(missions.find(x=>x.id==='${m.id}'))">Dispatch</button>`:''}
+        ${m.status==='In Progress'?`<button class="act-btn abort" onclick="event.stopPropagation();openAbort('${m.id}')">Abort</button>`:''}
+        <button class="act-btn review" onclick="event.stopPropagation();selectMission('${m.id}','mission')">View</button>
+      </div></td>
+    </tr>
+  `).join('');
+}
+function selectMission(id, ctx){
+  const m=missions.find(x=>x.id===id);
+  if(!m) return;
+  const panelId=ctx==='drone'?'panel-drone-overview':'panel-m-overview';
+  const detailId=ctx==='drone'?'panel-drone-detail':'panel-m-detail';
+  document.getElementById(panelId).innerHTML=`
+    <div class="panel-section">${m.id} — Quick View</div>
+    <div class="detail-row"><span class="dr-label">Drone</span><span class="dr-val info">${m.drone}</span></div>
+    <div class="detail-row"><span class="dr-label">Turbine</span><span class="dr-val">${m.turbine}</span></div>
+    <div class="detail-row"><span class="dr-label">Site</span><span class="dr-val">${m.site}</span></div>
+    <div class="detail-row"><span class="dr-label">Status</span><span class="badge ${statusBadge(m.status)}">${m.status}</span></div>
+    <div class="detail-row"><span class="dr-label">SLA</span><span class="dr-val">${m.sla}</span></div>
+    <div class="detail-row"><span class="dr-label">Operator</span><span class="dr-val">${m.operator}</span></div>
+    <div class="detail-row"><span class="dr-label">Battery</span><span class="dr-val" style="color:${battColor(m.battery)}">${m.battery}%</span></div>
+    ${m.status==='Pending'?`<div style="margin-top:12px"><button class="btn-primary" style="width:100%;font-size:11px" onclick="openDispatch(missions.find(x=>x.id==='${m.id}'))">DISPATCH MISSION</button></div>`:''}
+  `;
+}
+
+/* ─── PANEL SWITCHERS ─────────────────────────────────────────────── */
+function switchPanel(el,name){
+  const panels=['drone-overview','drone-detail','drone-weather'];
+  panels.forEach(p=>{const el2=document.getElementById('panel-'+p);if(el2)el2.style.display='none';});
+  document.querySelectorAll('#view-drones .split-panel .ptab').forEach(t=>t.classList.remove('active'));
+  const target=document.getElementById('panel-'+name);
+  if(target) target.style.display='block';
+  el.classList.add('active');
+}
+function switchTurbinePanel(el,name){
+  ['t-overview','t-faults'].forEach(p=>{const e=document.getElementById('panel-'+p);if(e)e.style.display='none';});
+  document.querySelectorAll('#view-turbines .split-panel .ptab').forEach(t=>t.classList.remove('active'));
+  const target=document.getElementById('panel-'+name);
+  if(target) target.style.display='block';
+  el.classList.add('active');
+}
+function switchMissionPanel(el,name){
+  ['m-overview','m-detail','m-weather'].forEach(p=>{const e=document.getElementById('panel-'+p);if(e)e.style.display='none';});
+  document.querySelectorAll('#view-missions .split-panel .ptab').forEach(t=>t.classList.remove('active'));
+  const target=document.getElementById('panel-'+name);
+  if(target) target.style.display='block';
+  el.classList.add('active');
+}
+
+/* ─── DISPATCH MODAL ─────────────────────────────────────────────── */
+let activeMission=null;
+function openDispatch(m){
+  activeMission=m;
+  document.getElementById('dModalSub').textContent=`${m.id} · ${m.site} · ${m.drone}`;
+  const hasWarn=m.concurrent||m.weatherRisk!=='ok';
+  document.getElementById('dModalBody').innerHTML=`
+    ${hasWarn?`<div class="warn-box"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/></svg><p>Environmental or safety conditions may restrict dispatch. Additional approval required.</p></div>`:''}
+    <div class="modal-sec-title">Mission Summary</div>
+    <div class="modal-grid">
+      <div class="modal-field"><label>Mission ID</label><value>${m.id}</value></div>
+      <div class="modal-field"><label>Site</label><value>${m.site}</value></div>
+      <div class="modal-field"><label>Assigned Drone</label><value style="color:#33b1ff">${m.drone}</value></div>
+      <div class="modal-field"><label>Operator</label><value>${m.operator}</value></div>
+      <div class="modal-field"><label>SLA Deadline</label><value>${m.sla}</value></div>
+      <div class="modal-field"><label>Turbine</label><value>${m.turbine}</value></div>
+    </div>
+    <div class="modal-sec-title">Safety Interlocks</div>
+    <div class="checklist">
+      <div class="check-item"><div class="chk ${m.battery>30?'pass':'fail'}">${m.battery>30?'✓':'✗'}</div>Battery sufficient (${m.battery}%)</div>
+      <div class="check-item"><div class="chk ${m.weatherRisk!=='bad'?'pass':'fail'}">${m.weatherRisk!=='bad'?'✓':'✗'}</div>Weather within flight parameters</div>
+      <div class="check-item"><div class="chk ${!m.concurrent?'pass':'warn'}">${!m.concurrent?'✓':'!'}</div>${m.concurrent?'⚠ Ground crew concurrent access':'No concurrent access conflicts'}</div>
+      <div class="check-item"><div class="chk pass">✓</div>Pre-flight checklist verified</div>
+    </div>
+  `;
+  const btn=document.getElementById('dConfirmBtn');
+  btn.style.opacity=m.weatherRisk==='bad'?'.5':'1';
+  openModal('dispatchModal');
+}
+function confirmDispatch(){
+  if(!activeMission) return;
+  closeModal('dispatchModal');
+  const m=missions.find(x=>x.id===activeMission.id);
+  if(m) m.status='In Progress';
+  renderMissions();renderDrones();
+  showNotif('success',`Mission dispatched: ${activeMission.id} · ${activeMission.drone}`);
+}
+
+/* ─── ABORT MODAL ─────────────────────────────────────────────────── */
+let abortMissionId=null;
+function openAbort(id){
+  abortMissionId=id;
+  const m=missions.find(x=>x.id===id);
+  document.getElementById('aModalSub').textContent=`${m.id} · ${m.site}`;
+  document.getElementById('abortReason').value='';
+  document.getElementById('abortComment').value='';
+  openModal('abortModal');
+}
+function confirmAbort(){
+  const reason=document.getElementById('abortReason').value;
+  const comment=document.getElementById('abortComment').value.trim();
+  if(!reason){showNotif('error','Select an abort reason');return;}
+  if(!comment){showNotif('error','Manager comment required');return;}
+  closeModal('abortModal');
+  const m=missions.find(x=>x.id===abortMissionId);
+  if(m) m.status='Aborted';
+  renderMissions();renderDrones();
+  showNotif('warning',`Mission aborted: ${abortMissionId} · Notifications sent`);
+}
+
+/* ─── MODAL HELPERS ───────────────────────────────────────────────── */
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.modal-overlay').forEach(o=>{
+  o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');});
+});
+
+/* ─── INIT ────────────────────────────────────────────────────────── */
+renderDrones();
+</script>
+</body>
+</html>
