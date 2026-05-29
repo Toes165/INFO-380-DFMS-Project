@@ -1,21 +1,16 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>DFMS — Mission Control</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <style>
-:root { --font-sans:'IBM Plex Sans',sans-serif; --font-mono:'IBM Plex Mono',monospace; }
-[data-theme="dark"] {
-  --bg:#161616; --layer:#262626; --layer2:#393939; --hover:#2c2c2c;
-  --border:#393939; --border-sub:#2c2c2c; --text:#f4f4f4; --text2:#a8a8a8; --text3:#6f6f6f;
-  --shell:#0f0f0f; --input-bg:#262626; --input-border:#525252; --modal-bg:#1c1c1c; --scroll:#525252;
-}
-[data-theme="light"] {
+:root {
   --bg:#f4f4f4; --layer:#ffffff; --layer2:#e8e8e8; --hover:#e8e8e8;
   --border:#e0e0e0; --border-sub:#f0f0f0; --text:#161616; --text2:#525252; --text3:#a8a8a8;
   --shell:#161616; --input-bg:#f4f4f4; --input-border:#8d8d8d; --modal-bg:#ffffff; --scroll:#c6c6c6;
+  --font-sans:'IBM Plex Sans',sans-serif; --font-mono:'IBM Plex Mono',monospace;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{font-family:var(--font-sans);background:var(--bg);color:var(--text);font-size:13px;line-height:1.5;height:100vh;display:flex;flex-direction:column;overflow:hidden;transition:background .2s,color .2s}
